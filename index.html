@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Puntos</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    
+</head>
+<body>
+    <div id="mapAspect" style="height: 500px;"></div>
+    <script>
+
+        var mapAspect = L.map('mapAspect').setView([9.928, -84.085], 8); 
+        var aspect = 'https://allanchen03.github.io/ProyectoIIISIG/aspect4.png'
+        var coord = [[11.220, -85.95], [8.020, -82.559]];
+        L.imageOverlay(aspect, coord, { opacity: 0.8 }).addTo(mapAspect);
+
+        var provinciasLayer = L.geoJSON(null, {
+            style: function () {
+                return { color: "#FF0000", weight: 2, fillOpacity: 0 }; // Estilo de las provincias
+            },
+            onEachFeature: function (feature, layer) {
+
+                let name = feature.properties.NPROVINCIA;
+                
+                layer.bindPopup(`<b>Nombre:</b> ${name}<br><b>Categoría:</b> ${'Provincia'}`);
+            }
+        }).addTo(mapAspect);
+        fetch('https://allanchen03.github.io/ProyectoIIISIG/provincias.geojson')
+            .then(response => response.json())
+            .then(data => provinciasLayer.addData(data));
+
+        var cantonesLayer = L.geoJSON(null, {
+        style: function () {
+            return { color: "#00FF00", weight: 2, fillOpacity: 0 }; // Estilo de los cantones
+        },
+            onEachFeature: function (feature, layer) {
+                let name = feature.properties.NCANTON;
+                let Provincia = feature.properties.NPROVINCIA;
+                
+                layer.bindPopup(`<b>Nombre:</b> ${name}<br><b>Provincia:</b> ${Provincia}`);
+            }
+        });
+        fetch('https://allanchen03.github.io/ProyectoIIISIG/cantones.geojson')
+            .then(response => response.json())
+            .then(data => cantonesLayer.addData(data));
+
+        var distritosLayer = L.geoJSON(null, {
+        style: function () {
+            return { color: "#FFA726", weight: 2, fillOpacity: 0 }; // Estilo de los cantones
+        },
+            onEachFeature: function (feature, layer) {
+                let Canton = feature.properties.NCANTON;
+                let Distrito = feature.properties.NDISTRITO;
+                
+                layer.bindPopup(`<b>Nombre:</b> ${Distrito}<br><b>Canton:</b> ${Canton}`);
+            }
+        });
+        fetch('https://allanchen03.github.io/ProyectoIIISIG/distritos.geojson')
+            .then(response => response.json())
+            .then(data => distritosLayer.addData(data));
+
+
+        var parquesLayer = L.geoJSON(null, {
+        style: function (feature) {
+            return { color: "#00FF00", weight: 1, fillOpacity: 0.5 }; // Estilo de los cantones
+        },
+            onEachFeature: function (feature, layer) {
+                let clase = feature.properties.fclass;
+                let nombre = feature.properties.name;
+                
+                layer.bindPopup(`<b>Nombre:</b> ${nombre}<br><b>clase:</b> ${clase}`);
+            }
+        });
+        fetch('https://allanchen03.github.io/ProyectoIIISIG/parques.geojson')
+            .then(response => response.json())
+            .then(data => parquesLayer.addData(data));
+
+        var riosLayer = L.geoJSON(null, {
+        style: function (feature) {
+            return { color: "#0000FF", weight: 1, fillOpacity: 0.5 }; // Estilo de los cantones
+        },
+            onEachFeature: function (feature, layer) {
+                let clase = feature.properties.fclass;
+                let nombre = feature.properties.name;
+                
+                layer.bindPopup(`<b>Nombre:</b> ${nombre}<br><b>clase:</b> ${clase}`);
+            }
+        });
+        fetch('https://allanchen03.github.io/ProyectoIIISIG/rios.geojson')
+            .then(response => response.json())
+            .then(data => riosLayer.addData(data));
+
+        var lugaresLayer = L.geoJSON(null, {
+        pointToLayer: function (feature, latlng) {
+            // Define el color según el valor de 'fclass'
+            let color;
+            switch (feature.properties.fclass) {
+                case "hospital":
+                    color = "#FF0000"; // Rojo para hospitales
+                    break;
+                case "school":
+                    color = "#0000FF"; // Azul para escuelas
+                    break;
+                case "bank":
+                    color = "#00FF00"; // Verde para bancos
+                    break;
+                case "university":
+                    color = "#42A5F5"; // Verde para banco
+                    break;
+                case "clinic":
+                    color = "#CC0000"; // Verde para banco
+                    break;
+                case "hotel":
+                    color = "#F06292"; // Verde para banco
+                    break;
+                default:
+                    color = "#808080"; // Gris para otros
+                    break;
+            }
+
+            // Devuelve un marcador circular con el color seleccionado
+            return L.circleMarker(latlng, {
+                radius: 5,
+                fillColor: color,
+                color: "#000", // Color del borde
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            });
+        },
+        onEachFeature: function (feature, layer) {
+            // Agrega un popup con la información del lugar
+            let clase = feature.properties.fclass || "Sin categoría";
+            let nombre = feature.properties.name || "Sin nombre";
+            layer.bindPopup(`<b>Nombre:</b> ${nombre}<br><b>Clase:</b> ${clase}`);
+        }
+    });
+
+        // Cargar los datos desde el GeoJSON
+        fetch('https://allanchen03.github.io/ProyectoIIISIG/lugares.geojson')
+            .then(response => response.json())
+            .then(data => lugaresLayer.addData(data))
+            .catch(error => console.error('Error cargando el GeoJSON:', error));
+   
+        
+
+        mapAspect.on('zoomend', function () {
+        var zoomLevel = mapAspect.getZoom();
+        console.log("Nivel de zoom:", zoomLevel);
+
+        // Provincias: visibles en zoom 7 o menor
+        if (zoomLevel <= 7) {
+            mapAspect.addLayer(provinciasLayer);
+            mapAspect.removeLayer(cantonesLayer);
+            mapAspect.removeLayer(distritosLayer);
+            mapAspect.removeLayer(parquesLayer);
+            mapAspect.removeLayer(riosLayer);
+            mapAspect.removeLayer(lugaresLayer);
+            
+        }
+        // Cantones y Ríos: visibles en zoom 8-10
+        else if (zoomLevel == 8) {
+            mapAspect.addLayer(cantonesLayer);
+            mapAspect.removeLayer(provinciasLayer);
+            mapAspect.removeLayer(distritosLayer);
+            mapAspect.removeLayer(parquesLayer);
+            mapAspect.removeLayer(riosLayer);
+            mapAspect.removeLayer(lugaresLayer);
+            
+        }
+        
+        else if (zoomLevel == 9) {
+            mapAspect.addLayer(distritosLayer);
+            mapAspect.removeLayer(provinciasLayer);
+            mapAspect.removeLayer(cantonesLayer);
+            mapAspect.removeLayer(parquesLayer);
+            mapAspect.removeLayer(riosLayer);
+            mapAspect.removeLayer(lugaresLayer);
+            
+        }
+
+        else if (zoomLevel == 10) {
+            mapAspect.addLayer(parquesLayer);
+            mapAspect.removeLayer(provinciasLayer);
+            mapAspect.removeLayer(cantonesLayer);
+            mapAspect.removeLayer(lugaresLayer);
+            mapAspect.addLayer(distritosLayer);
+            mapAspect.addLayer(riosLayer);
+            
+        }
+
+        else if (zoomLevel == 11) {
+            mapAspect.removeLayer(provinciasLayer);
+            mapAspect.removeLayer(cantonesLayer);
+            mapAspect.removeLayer(parquesLayer);
+            mapAspect.removeLayer(riosLayer);
+            mapAspect.addLayer(distritosLayer);
+            mapAspect.addLayer(lugaresLayer);
+            
+        }
+    });
+
+   
+
+        
+    </script>
+    </script>
+
+
+    <div id="map" style="height: 500px;"></div>
+    <script>
+        var map = L.map('map').setView([9.928, -84.085], 8); 
+        var relief2 = 'https://allanchen03.github.io/ProyectoIIISIG/relief2.png'
+        var coord = [[11.220, -85.95], [8.020, -82.559]];
+        L.imageOverlay(relief2, coord, { opacity: 0.8 }).addTo(map);
+
+        var provinciasLayer = L.geoJSON(null, {
+            style: function () {
+                return { color: "#FF0000", weight: 2, fillOpacity: 0 }; // Estilo de las provincias
+            },
+            onEachFeature: function (feature, layer) {
+
+                let name = feature.properties.NPROVINCIA;
+                
+                layer.bindPopup(`<b>Nombre:</b> ${name}<br><b>Categoría:</b> ${'Provincia'}`);
+            }
+        }).addTo(map);
+        fetch('https://allanchen03.github.io/ProyectoIIISIG/provincias.geojson')
+            .then(response => response.json())
+            .then(data => provinciasLayer.addData(data));
+
+        var cantonesLayer = L.geoJSON(null, {
+        style: function () {
+            return { color: "#00FF00", weight: 2, fillOpacity: 0 }; // Estilo de los cantones
+        },
+            onEachFeature: function (feature, layer) {
+                let name = feature.properties.NCANTON;
+                let Provincia = feature.properties.NPROVINCIA;
+                
+                layer.bindPopup(`<b>Nombre:</b> ${name}<br><b>Provincia:</b> ${Provincia}`);
+            }
+        });
+        fetch('https://allanchen03.github.io/ProyectoIIISIG/cantones.geojson')
+            .then(response => response.json())
+            .then(data => cantonesLayer.addData(data));
+
+        var distritosLayer = L.geoJSON(null, {
+        style: function () {
+            return { color: "#FFA726", weight: 2, fillOpacity: 0 }; // Estilo de los cantones
+        },
+            onEachFeature: function (feature, layer) {
+                let Canton = feature.properties.NCANTON;
+                let Distrito = feature.properties.NDISTRITO;
+                
+                layer.bindPopup(`<b>Nombre:</b> ${Distrito}<br><b>Canton:</b> ${Canton}`);
+            }
+        });
+        fetch('https://allanchen03.github.io/ProyectoIIISIG/distritos.geojson')
+            .then(response => response.json())
+            .then(data => distritosLayer.addData(data));
+
+
+        var parquesLayer = L.geoJSON(null, {
+        style: function (feature) {
+            return { color: "#00FF00", weight: 1, fillOpacity: 0.5 }; // Estilo de los cantones
+        },
+            onEachFeature: function (feature, layer) {
+                let clase = feature.properties.fclass;
+                let nombre = feature.properties.name;
+                
+                layer.bindPopup(`<b>Nombre:</b> ${nombre}<br><b>clase:</b> ${clase}`);
+            }
+        });
+        fetch('https://allanchen03.github.io/ProyectoIIISIG/parques.geojson')
+            .then(response => response.json())
+            .then(data => parquesLayer.addData(data));
+
+        var riosLayer = L.geoJSON(null, {
+        style: function (feature) {
+            return { color: "#0000FF", weight: 1, fillOpacity: 0.5 }; // Estilo de los cantones
+        },
+            onEachFeature: function (feature, layer) {
+                let clase = feature.properties.fclass;
+                let nombre = feature.properties.name;
+                
+                layer.bindPopup(`<b>Nombre:</b> ${nombre}<br><b>clase:</b> ${clase}`);
+            }
+        });
+        fetch('https://allanchen03.github.io/ProyectoIIISIG/rios.geojson')
+            .then(response => response.json())
+            .then(data => riosLayer.addData(data));
+
+        var lugaresLayer = L.geoJSON(null, {
+        pointToLayer: function (feature, latlng) {
+            // Define el color según el valor de 'fclass'
+            let color;
+            switch (feature.properties.fclass) {
+                case "hospital":
+                    color = "#FF0000"; // Rojo para hospitales
+                    break;
+                case "school":
+                    color = "#0000FF"; // Azul para escuelas
+                    break;
+                case "bank":
+                    color = "#00FF00"; // Verde para bancos
+                    break;
+                case "university":
+                    color = "#42A5F5"; // Verde para banco
+                    break;
+                case "clinic":
+                    color = "#CC0000"; // Verde para banco
+                    break;
+                case "hotel":
+                    color = "#F06292"; // Verde para banco
+                    break;
+                default:
+                    color = "#808080"; // Gris para otros
+                    break;
+            }
+
+            // Devuelve un marcador circular con el color seleccionado
+            return L.circleMarker(latlng, {
+                radius: 5,
+                fillColor: color,
+                color: "#000", // Color del borde
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            });
+        },
+        onEachFeature: function (feature, layer) {
+            // Agrega un popup con la información del lugar
+            let clase = feature.properties.fclass || "Sin categoría";
+            let nombre = feature.properties.name || "Sin nombre";
+            layer.bindPopup(`<b>Nombre:</b> ${nombre}<br><b>Clase:</b> ${clase}`);
+        }
+    });
+
+        // Cargar los datos desde el GeoJSON
+        fetch('https://allanchen03.github.io/ProyectoIIISIG/lugares.geojson')
+            .then(response => response.json())
+            .then(data => lugaresLayer.addData(data))
+            .catch(error => console.error('Error cargando el GeoJSON:', error));
+   
+        
+
+        map.on('zoomend', function () {
+        var zoomLevel = map.getZoom();
+        console.log("Nivel de zoom:", zoomLevel);
+
+        // Provincias: visibles en zoom 7 o menor
+        if (zoomLevel <= 7) {
+            map.addLayer(provinciasLayer);
+            map.removeLayer(cantonesLayer);
+            map.removeLayer(distritosLayer);
+            map.removeLayer(parquesLayer);
+            map.removeLayer(riosLayer);
+            map.removeLayer(lugaresLayer);
+            
+        }
+        // Cantones y Ríos: visibles en zoom 8-10
+        else if (zoomLevel == 8) {
+            map.addLayer(cantonesLayer);
+            map.removeLayer(provinciasLayer);
+            map.removeLayer(distritosLayer);
+            map.removeLayer(parquesLayer);
+            map.removeLayer(riosLayer);
+            map.removeLayer(lugaresLayer);
+            
+        }
+        
+        else if (zoomLevel == 9) {
+            map.addLayer(distritosLayer);
+            map.removeLayer(provinciasLayer);
+            map.removeLayer(cantonesLayer);
+            map.removeLayer(parquesLayer);
+            map.removeLayer(riosLayer);
+            map.removeLayer(lugaresLayer);
+            
+        }
+
+        else if (zoomLevel == 10) {
+            map.addLayer(parquesLayer);
+            map.removeLayer(provinciasLayer);
+            map.removeLayer(cantonesLayer);
+            map.removeLayer(lugaresLayer);
+            map.addLayer(distritosLayer);
+            map.addLayer(riosLayer);
+            
+        }
+
+        else if (zoomLevel == 11) {
+            map.removeLayer(provinciasLayer);
+            map.removeLayer(cantonesLayer);
+            map.removeLayer(parquesLayer);
+            map.removeLayer(riosLayer);
+            map.addLayer(distritosLayer);
+            map.addLayer(lugaresLayer);
+            
+        }
+    });
+
+    </script>
+    </script>
+
+
+
+</body>
+</html>
